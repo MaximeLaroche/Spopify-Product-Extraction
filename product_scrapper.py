@@ -4,15 +4,11 @@ import time
 import json
 import pandas as pd
 
-url = 'https://direktvomfeld.eu/products.json'
+url = 'https://direktvomfeld.eu/products.json?limit=250'
 
-output = 'products.csv'
 
 req = requests.get(url)
 data = req.json()
-
-line = ' handle,title,body,price'
-line += '\n'
 
 
 product_list = []
@@ -35,10 +31,7 @@ for product in data['products']:
      
         prod[f'Option{i} Name'] = var['option1']
         prod[f'Option{i} Value'] = var['title']
-            # for value in option['values']:
-            #     prod[f'Option{i} Value'] += value +' '
-            #prod[f'Option{i} Values'] = option['values']
-            # i+=1
+            
         prod['Compare At Price'] = var['compare_at_price']
         prod['price'] = var['price']
         image = str(var['featured_image'])
@@ -67,8 +60,7 @@ for product in data['products']:
                 prod['Image URL'] += src[index].split(',',1)[0] + " "
                 prod['Image URL'] = prod['Image URL'].replace('\'','')
                 index+=1
-            #print(prod['Image URL'])
-            #prod['Variant image'] = prod['Image URL']
+            
         prod['Published'] = var['available']
         prod['Requires Shipping'] = var['requires_shipping']
         prod['SKU'] = var['sku']
@@ -77,12 +69,8 @@ for product in data['products']:
             prod['Tags'] += tag + '\n'
         prod['Taxable'] = var['taxable']
         prod['Weight in grams'] = var['grams']
-        #if var['title'] != "Default Title":
-            #prod['title'] = var['title']
+        
         product_list.append(prod)
-
-
-
 
         variants+=1
     for image in product['images']:
@@ -93,19 +81,7 @@ for product in data['products']:
             'Image URL' : image['src'],
             'Image Position': image['position']
         }
-        #print(prod['Image URL'])
         product_list.append(prod)
-
-        # prod['Tags'] = ''
-        # for tag in product['tags']:
-        #     prod['Tags'] += tag + ' '
-
-        # #prod['Published'] = product['available']
-        # i=1
-        # for option in product['options']:
-        #     prod[f'option{i} Name'] = option['name']
-        #     prod[f'option{i} value'] = option['values']
-        #     i+=1
 
         
 
@@ -113,26 +89,4 @@ for product in data['products']:
 df = pd.DataFrame(product_list)
 df.to_csv('output.csv',encoding="utf-8")
 
-
-
-
-# with open('x.csv','w',encoding='UTF-8') as file:
-#     file.write('handle,title,description,Vendor,type,id,Option1 Name,Option1 Value,Compare At Price,price,Published,Requires Shipping,SKU,Tags,Taxable,Weight in grams,Image URL,Image Position,Image Alt Text\n')
-#     rows='handle,title,description,Vendor,type,id,Option1 Name,Option1 Value,Compare At Price,price,Published,Requires Shipping,SKU,Tags,Taxable,Weight in grams,Image URL,Image Position,Image Alt Text'.split(',')
-#     i=0
-#     for prod in product_list:
-#         line=''
-#         for row in rows:
-#             try:
-#                 line += str(prod[row])
-#             except:
-#                 pass
-#             line+=','
-#             line.replace("\"","xxyy")
-#             line.replace("xx","\"")
-#             line.replace("yy","\"")
-#         print(i)
-#         line+='\n'
-#         file.write(line)
-#         i+=1
 
