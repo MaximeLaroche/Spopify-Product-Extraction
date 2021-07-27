@@ -16,33 +16,63 @@ import re
 
 home_page = 'https://doncarne.de/de'
 product_page = "/produkt/"
+separator = "f9ha"
 
 
+# class product:
+#     def __init__(self):
+#         self.handle = ''
+#         self.title = ''
+#         self.description = ''
+#         self.type = ''
+#         self.option1 Name = ''
+#         self.option1 Value = ''
+#         self.compareAtPrice = ''
+#         self.price = ''
+#         self.published = ''
+#         self.requires_shipping = ''
+#         self.SKU = ''
+#         self.tags = ''
+#         self.taxable = ''
+#         self.grams = ''
+#         self.image URL = ''
+#         self.image Position = ''
+#         self.imageAltText = ''
 
-class product:
-    def __init__(self):
-        self.handle = ''
-        self.title = ''
-        self.description = ''
-        self.type = ''
-        self.option1Name = ''
-        self.option1Value = ''
-        self.compareAtPrice = ''
-        self.price = ''
-        self.published = ''
-        self.requires_shipping = ''
-        self.SKU = ''
-        self.tags = ''
-        self.taxable = ''
-        self.grams = ''
-        self.imageURL = ''
-        self.imagePosition = ''
-        self.imageAltText = ''
+#         self.url=''
 
-        self.url=''
-
-        
-
+dummy = {
+    'title':'',
+    'price':'',
+    'url':'',
+    'Weight in Grams':'',
+    'handle':'',
+    'Requires':'',
+    'Requires Shipping':'',
+    'title':'',
+    'description':'',
+    'image URL':'',
+    'image Position':'',
+    'image URL':'',
+    'option1 Name':'',
+    'option1 Value':''
+    
+}
+def dict_to_string(dictionary):
+    line = ''
+    line += str(dictionary['handle'])                 + separator
+    line += str(dictionary['title'])                 + separator
+    line += str(dictionary['price'])                 + separator
+    line += str(dictionary['url'])                   + separator
+    line += str(dictionary['Weight in Grams'])       + separator
+    line += str(dictionary['Requires Shipping'])     + separator
+    line += str(dictionary['description'])           + separator
+    line += str(dictionary['image URL'])             + separator
+    line += str(dictionary['image Position'])        + separator
+    line += str(dictionary['option1 Name'])          + separator
+    line += str(dictionary['option1 Value'])
+    line += "\n"
+    return line
 
 products = []
 
@@ -54,7 +84,7 @@ soup = bs(req.text,'html.parser')
 cards = soup.find_all('div',class_="product--bottom-container")
 
 for card in cards:
-    p = {}
+    p = dummy
     p['price'] = card.find('span',class_='price--default is--nowrap').text.split('€',1)[0]
     p['title'] = card.find('a',class_='product--title')['title']
     p['url'] = card.find('a',class_='product--title')['href']
@@ -63,11 +93,11 @@ for card in cards:
     try:
         kg= card.find('div',class_ = 'price--scale is--nowrap').text.split('€',1)[0].replace(',','')
         kg = float(kg)/100
-        p['grams'] = kg / 1000
-        p['grams'] = p['price'] / p['grams']
-        print(p['grams'])
+        p['Weight in Grams'] = kg / 1000
+        p['Weight in Grams'] = p['price'] / p['Weight in Grams']
+        #print(p['Weight in Grams'])
     except :
-        pass
+        print('Got axception with weight')
 
     try:
         tags = card.find_all('li')
@@ -75,121 +105,187 @@ for card in cards:
             p['tags'] += f' {tag.text}'
         
     except :
-        pass
+        print('Got axception with tags')
 
     products.append(p)
 driver = webdriver.Chrome(ChromeDriverManager().install())
-r=0
-for p in products:
-    r+=1
-    p['handle'] = re.sub('[^A-Za-z0-9]+','',p['title']).replace(' ','-')
-    p['requires_shipping'] = 'True'
-    p['taxable'] = 'True'
+numProduct = 0
+variantList = []
+with open('output2.csv','w',encoding="UTF-8") as outfile:
+    line = ''
+    numKeys = 1
+
     
-    #driver.get(p['url'])
+    line += 'handle'                + separator
+    line += 'title'                 + separator
+    line += 'price'                 + separator
+    line += 'url'                   + separator
+    line += 'Weight in Grams'       + separator
+    line += 'Requires Shipping'     + separator
+    line += 'description'           + separator
+    line += 'image URL'             + separator
+    line += 'image Position'        + separator
+    line += 'option1 Name'          + separator
+    line += 'option1 value'         + "\n"
+    outfile.write(line)
+    for p in products:
+        numProduct += 1
+        if numProduct > 20:
+            break
+        print(f'\n\n\n\n\n\n\n\n-----------------------------Making product {numProduct}/{len(products)}----------------------------------------\n')
+        
+        p['handle'] = p['url'].split('/')[-1]
+        p['handle'] = p['handle'].split('?')[0]
+        p['Requires Shipping'] = 'True'
+        p['taxable'] = 'True'
+        #Category tags
+        
+        
+        #driver.get(p['url'])
 
-    #WebDriverWait(driver,15).until(EC.presence_of_element_located((By.ID, "uc-btn-accept-banner"))).click()
+        #WebDriverWait(driver,15).until(EC.presence_of_element_located((By.ID, "uc-btn-accept-banner"))).click()
+        
+        #page = driver.execute_script('return document.documentElement.outerHTML')
+        #with open(f'outter.html','w',encoding="UTF-8") as file:
+            #file.write(page)
+        
+        page = requests.get(p['url'])
+        soup = bs(page.text,'html.parser')#""".text"""
+
     
-    #page = driver.execute_script('return document.documentElement.outerHTML')
-    #with open(f'outter.html','w',encoding="UTF-8") as file:
-        #file.write(page)
-    
-    page = requests.get(p['url'])
-    soup = bs(page.text,'html.parser')#""".text"""
+        #description cote
+        p['description'] = str(soup.select("div.product--buybox-container"))
+       
+        
 
-   
-    #description cote
-    description = soup.find('div',class_ = 'product--buybox-container')
-    
-    for div in description.find_all('div'):
-        if not ('form' in div.text or 'price' not in div.text):
-            p['description'] += str(div.html)
+        try:
+            p['description'] += str(soup.select('div.dc-product-details--entry'))
+            # print(descriptions)
+            # for des in descriptions:
+            #     p['description'] += str(des.html)
+            #     print(p['description'])
+        except :
+            print('Got axception in description dc-product-details--entry')
+        try:
+            p['description'] += str(soup.select('div.container'))
+        except :
+            print('Got axception in description container')
+        
+        try:
+            p['description'] = str(p['description']).replace('\n','')
+            print('description' + p['description'])
+        except :
+            print('exception trying to replace new lines')
+        print('description')
+        print(p['description'])
+        #images 
+        images = soup.find_all('div', class_ = 'image--box image-slider--item')
+        
+        i=1
+        p['image URL'] =''
+        for image in images:
+            img = image['style'].split('url(',2)[2].split('\')',1)[0]
+            img = img.replace('\'','')
+            p['image URL'] += ' ' + img
+            p['image Position'] = f'{i}'
+            i+=1
 
-    try:
-        p['description'] += str(soup.find('div',class_ = 'dc-product-details--entry dc-element--originrace').html)
-    except :
-        pass
-    try:
-        p['description'] += str(soup.find('div',class_ = 'container').html)
-    except :
-        pass
 
-    #images 
-    images = soup.find_all('div', class_ = 'image--box image-slider--item')
-    
-    i=1
-    p['imageURL'] =''
-    for image in images:
-        img = image['style'].split('url(',2)[2].split('\')',1)[0]
-        p['imageURL'] += ' ' + img
-        p['imagePosition'] = f'{i}'
-        i+=1
-
-    #variants
-    try:
-        variants = soup.find('div',class_='product--configurator')
-        variants = variants.find_all('option')
-        if len(variants)>1:
-            driver.get(p['url'])
-            try:
-                WebDriverWait(driver,5).until(EC.presence_of_element_located((By.ID, "uc-btn-accept-banner"))).click()
-            except :
-                pass
-            i=1
-            
-            for variant in variants:
-                v = {}
-                v['handle'] = p['handle']
-
-                WebDriverWait(driver,15).until(EC.presence_of_element_located((By.CLASS_NAME, "select-field"))).click()
-                WebDriverWait(driver,15).until(EC.presence_of_element_located((By.XPATH, f"//div[2]/div[1]/form/div/select/option[{i}]"))).click()
-                
-                page = driver.execute_script('return document.documentElement.outerHTML')
-                
-                soup = bs(page,'html.parser')
-                
-                v['title'] = str(soup.find('h1', class_='product--title').text).strip()
-                
-                v['price'] = soup.find('span', class_='price--content content--default').text.split('€',1)[0].strip().replace(',','.')
-                print(v['price'])
-                v['grams'] = soup.find("div",class_="product--unit").text.split('. ',1)[1].split(' ',1)[0]
-                print(v['grams'])
-                v['option1Name']=variant.text.strip()
-                v['option1Value'] = v['option1Name']
-                
-                #description cote
-                description = soup.find('div',class_ = 'product--buybox-container')
-                
-                for div in description.find_all('div'):
-                    if not ('form' in div.text or 'price' not in div.text):
-                        v['description'] += str(div.html)
-
+        outfile.write(dict_to_string(p))
+        #variants
+        try:
+            variants = soup.find('div',class_='product--configurator')
+            variants = variants.find_all('option')
+            if len(variants)>1:
+                driver.get(p['url'])
                 try:
-                    v['description'] += str(soup.find('div',class_ = 'dc-product-details--entry dc-element--originrace').html)
+                    WebDriverWait(driver,5).until(EC.presence_of_element_located((By.ID, "uc-btn-accept-banner"))).click()
                 except :
-                    pass
-                try:
-                    v['description'] += str(soup.find('div',class_ = 'container').html)
-                except :
-                    pass
+                    print('Got axception no cookies')
+                i=1
+                
+                for variant in variants:
+                    v = dummy
+                    v['handle'] = p['handle']
 
-            
-                i +=1
+                    selectField = WebDriverWait(driver,15).until(EC.presence_of_element_located((By.CLASS_NAME, "select-field")))
+                    selectField.click()
+                    #print("selectField")
+                    option = WebDriverWait(selectField,15).until(EC.presence_of_all_elements_located((By.XPATH,".//*")))
+                    #option = selectField.find_elements_by_xpath(".//*")
+                    #print("Option Declared")
+                    option[i].click()
+                    #print(f'option {i} clicked')
 
-            products.append(v) 
+                    page = driver.execute_script('return document.documentElement.outerHTML')
+                    
+                    soup = bs(page,'html.parser')
+                    
+                    v['title'] = str(soup.find('h1', class_='product--title').text).strip()
+                    
+                    v['price'] = soup.find('span', class_='price--content content--default').text.split('€',1)[0].strip().replace(',','.')
+                    #print(v['price'])
+                    v['Weight in Grams'] = soup.find("div",class_="product--unit").text.split('. ',1)[1].split(' ',1)[0]
+                    #print(v['Weight in Grams'])
+                    v['option1 Name']='Option'
+                    v['option1 Value'] = variant.text.strip()
+                    
+                    #description cote
+                    v['description'] = str(soup.select("div.product--buybox-container"))
+                
+                    
+
+                    try:
+                        v['description'] += str(soup.select('div.dc-product-details--entry'))
+                        # print(descriptions)
+                        # for des in descriptions:
+                        #     v['description'] += str(des.html)
+                        #     print(v['description'])
+                    except :
+                        print('Got axception in description dc-product-details--entry')
+                    try:
+                        v['description'] += str(soup.select('div.container'))
+                    except :
+                        print('Got axception in description container')
+                    
+                    try:
+                        v['description'] = str(v['description']).replace('\n','')
+                        print('description' + v['description'])
+                    except :
+                        print('exception trying to replace new lines')
+                    print('description')
+                    print(v['description'])
+
+
+
+                    i +=1
+                    outfile.write(dict_to_string(v))
+                    variantList.append(v) 
 
 
 
 
-            
-    except:
-        pass
-    
+                
+        except:
+            print('Got axception somewhere in variants')
+
+for variant in variantList:
+    products.append(variant)
 df = pd.DataFrame(products)
 df.to_csv('Output.csv')
+
 df.to_json('Output.js')
     
-
+print(products[5]['title'])                 
+print(products[5]['price'])                 
+print(products[5]['url'])                   
+print(products[5]['Weight in Grams'])       
+print(products[5]['Requires Shipping'])     
+print(products[5]['description'])           
+print(products[5]['image URL'])             
+print(products[5]['image Position'])        
+print(products[5]['option1 Name'])          
+print(products[5]['option1 Value'])
 
 
 
