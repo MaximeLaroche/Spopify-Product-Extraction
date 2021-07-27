@@ -2,3 +2,7 @@
 /Products_files/
 *.html
 
+geckodriver.log
+output.csv
+Output.js
+output2.csv
