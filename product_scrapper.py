@@ -44,18 +44,19 @@ separator = "f9ha"
 dummy = {
     'title':'',
     'price':'',
-    'url':'',
     'Weight in Grams':'',
     'handle':'',
     'Requires':'',
     'Requires Shipping':'',
     'title':'',
-    'description':'',
     'image URL':'',
     'image Position':'',
     'image URL':'',
     'option1 Name':'',
-    'option1 Value':''
+    'option1 Value':'',
+    'taxable':'',
+    'url':'',
+    'description':''
     
 }
 def dict_to_string(dictionary):
@@ -63,14 +64,14 @@ def dict_to_string(dictionary):
     line += str(dictionary['handle'])                 + separator
     line += str(dictionary['title'])                 + separator
     line += str(dictionary['price'])                 + separator
-    line += str(dictionary['url'])                   + separator
+    # line += str(dictionary['url'])                   + separator
     line += str(dictionary['Weight in Grams'])       + separator
     line += str(dictionary['Requires Shipping'])     + separator
-    line += str(dictionary['description'])           + separator
     line += str(dictionary['image URL'])             + separator
     line += str(dictionary['image Position'])        + separator
     line += str(dictionary['option1 Name'])          + separator
-    line += str(dictionary['option1 Value'])
+    line += str(dictionary['option1 Value'])         + separator
+    line += str(dictionary['description'])  
     line += "\n"
     return line
 
@@ -83,8 +84,26 @@ soup = bs(req.text,'html.parser')
 #main info
 cards = soup.find_all('div',class_="product--bottom-container")
 
+#print(f'amount of cars {len(cards)}')
 for card in cards:
-    p = dummy
+    p = {
+        'title':'',
+    'price':'',
+    'Weight in Grams':'',
+    'handle':'',
+    'Requires':'',
+    'Requires Shipping':'',
+    'title':'',
+    'image URL':'',
+    'image Position':'',
+    'image URL':'',
+    'option1 Name':'',
+    'option1 Value':'',
+    'taxable':'',
+    'url':'',
+    'description':''
+    }
+    
     p['price'] = card.find('span',class_='price--default is--nowrap').text.split('€',1)[0]
     p['title'] = card.find('a',class_='product--title')['title']
     p['url'] = card.find('a',class_='product--title')['href']
@@ -95,9 +114,10 @@ for card in cards:
         kg = float(kg)/100
         p['Weight in Grams'] = kg / 1000
         p['Weight in Grams'] = p['price'] / p['Weight in Grams']
-        #print(p['Weight in Grams'])
+        ##print(p['Weight in Grams'])
     except :
-        print('Got axception with weight')
+        pass
+        #print('Got axception with weight')
 
     try:
         tags = card.find_all('li')
@@ -105,7 +125,8 @@ for card in cards:
             p['tags'] += f' {tag.text}'
         
     except :
-        print('Got axception with tags')
+        pass
+        #print('Got axception with tags')
 
     products.append(p)
 driver = webdriver.Chrome(ChromeDriverManager().install())
@@ -119,20 +140,20 @@ with open('output2.csv','w',encoding="UTF-8") as outfile:
     line += 'handle'                + separator
     line += 'title'                 + separator
     line += 'price'                 + separator
-    line += 'url'                   + separator
+    # line += 'url'                   + separator
     line += 'Weight in Grams'       + separator
     line += 'Requires Shipping'     + separator
-    line += 'description'           + separator
     line += 'image URL'             + separator
     line += 'image Position'        + separator
     line += 'option1 Name'          + separator
     line += 'option1 value'         + "\n"
+    line += 'description'           + separator
     outfile.write(line)
     for p in products:
         numProduct += 1
-        if numProduct > 20:
+        if numProduct > 3:
             break
-        print(f'\n\n\n\n\n\n\n\n-----------------------------Making product {numProduct}/{len(products)}----------------------------------------\n')
+        print(f'\n\n\n\n-----------------------------Making product {numProduct}/{len(products)}----------------------------------------\n')
         
         p['handle'] = p['url'].split('/')[-1]
         p['handle'] = p['handle'].split('?')[0]
@@ -154,45 +175,66 @@ with open('output2.csv','w',encoding="UTF-8") as outfile:
 
     
         #description cote
-        p['description'] = str(soup.select("div.product--buybox-container"))
+        buybox = soup.select("div.product--buybox-container")[0]
+        print(buybox)
+        title = buybox.select('h1.product--title')[0]
+        title.decompose()
+        title = buybox.select('div.product--stars')[0]
+        title.decompose()
+        
+        des = str(buybox)
        
         
 
+        # try:
+        #     p['description'] += str(soup.select('div.dc-product-details--entry'))
+        #     # #print(descriptions)
+        #     # for des in descriptions:
+        #     #     p['description'] += str(des.html)
+        #     #     #print(p['description'])
+        # except :
+        #     #print('Got axception in description dc-product-details--entry')
         try:
-            p['description'] += str(soup.select('div.dc-product-details--entry'))
-            # print(descriptions)
-            # for des in descriptions:
-            #     p['description'] += str(des.html)
-            #     print(p['description'])
+            des += str(soup.select('div.dc-product-details'))
         except :
-            print('Got axception in description dc-product-details--entry')
+            pass
+            #print('Got axception in description container')
         try:
-            p['description'] += str(soup.select('div.container'))
+            des += str(soup.select('div.product--accordion-container'))
         except :
-            print('Got axception in description container')
-        
+            pass
+            #print('Got axception in description container')
         try:
-            p['description'] = str(p['description']).replace('\n','')
-            print('description' + p['description'])
+            p['description'] = str(des.replace('\n','').replace('[','').replace(']','').replace('background-image:','patatipatata').replace("\"\"","hahahaha"))
+            p['description'] = p['description'].replace('patatipatata','background-size:cover; height:300px; background-image:').replace("hahaha","\"")
+            
+            #print('description' + p['description'])
         except :
-            print('exception trying to replace new lines')
-        print('description')
-        print(p['description'])
+            pass
+            #print('exception trying to replace new lines')
+        #print('description')
+        #print(p['description'])
         #images 
         images = soup.find_all('div', class_ = 'image--box image-slider--item')
         
         i=1
         p['image URL'] =''
         for image in images:
+            im = {
+                'handle' : p['handle']
+            }
+            
             img = image['style'].split('url(',2)[2].split('\')',1)[0]
             img = img.replace('\'','')
-            p['image URL'] += ' ' + img
-            p['image Position'] = f'{i}'
+            im['image URL'] = img
+            im['image Position'] = f'{i}'
+            variantList.append(im)
             i+=1
 
 
         outfile.write(dict_to_string(p))
         #variants
+        
         try:
             variants = soup.find('div',class_='product--configurator')
             variants = variants.find_all('option')
@@ -201,60 +243,59 @@ with open('output2.csv','w',encoding="UTF-8") as outfile:
                 try:
                     WebDriverWait(driver,5).until(EC.presence_of_element_located((By.ID, "uc-btn-accept-banner"))).click()
                 except :
-                    print('Got axception no cookies')
+                    pass
+                    #print('Got axception no cookies')
                 i=1
                 
                 for variant in variants:
-                    v = dummy
+                    v = {}
                     v['handle'] = p['handle']
 
                     selectField = WebDriverWait(driver,15).until(EC.presence_of_element_located((By.CLASS_NAME, "select-field")))
                     selectField.click()
-                    #print("selectField")
+                    ##print("selectField")
                     option = WebDriverWait(selectField,15).until(EC.presence_of_all_elements_located((By.XPATH,".//*")))
                     #option = selectField.find_elements_by_xpath(".//*")
-                    #print("Option Declared")
+                    ##print("Option Declared")
                     option[i].click()
-                    #print(f'option {i} clicked')
-
-                    page = driver.execute_script('return document.documentElement.outerHTML')
+                    
+                    page = driver.page_source
                     
                     soup = bs(page,'html.parser')
                     
                     v['title'] = str(soup.find('h1', class_='product--title').text).strip()
                     
                     v['price'] = soup.find('span', class_='price--content content--default').text.split('€',1)[0].strip().replace(',','.')
-                    #print(v['price'])
+                    ##print(v['price'])
                     v['Weight in Grams'] = soup.find("div",class_="product--unit").text.split('. ',1)[1].split(' ',1)[0]
-                    #print(v['Weight in Grams'])
+                    ##print(v['Weight in Grams'])
                     v['option1 Name']='Option'
                     v['option1 Value'] = variant.text.strip()
                     
-                    #description cote
-                    v['description'] = str(soup.select("div.product--buybox-container"))
+                   #description cote
+                    des = str(soup.select("div.product--buybox-container"))
                 
                     
 
+                    # try:
+                    #     p['description'] += str(soup.select('div.dc-product-details--entry'))
+                    #     # #print(descriptions)
+                    #     # for des in descriptions:
+                    #     #     p['description'] += str(des.html)
+                    #     #     #print(p['description'])
+                    # except :
+                    #     #print('Got axception in description dc-product-details--entry')
                     try:
-                        v['description'] += str(soup.select('div.dc-product-details--entry'))
-                        # print(descriptions)
-                        # for des in descriptions:
-                        #     v['description'] += str(des.html)
-                        #     print(v['description'])
+                        des += str(soup.select('div.dc-product-details--entry'))
                     except :
-                        print('Got axception in description dc-product-details--entry')
-                    try:
-                        v['description'] += str(soup.select('div.container'))
-                    except :
-                        print('Got axception in description container')
+                        pass
+                        #print('Got axception in description container')
                     
                     try:
-                        v['description'] = str(v['description']).replace('\n','')
-                        print('description' + v['description'])
+                        v['description'] = str(des.replace('\n',''))
+                        #print('description' + p['description'])
                     except :
-                        print('exception trying to replace new lines')
-                    print('description')
-                    print(v['description'])
+                        pass
 
 
 
@@ -267,25 +308,43 @@ with open('output2.csv','w',encoding="UTF-8") as outfile:
 
                 
         except:
-            print('Got axception somewhere in variants')
+            pass
+            #print('Got axception somewhere in variants')
 
 for variant in variantList:
     products.append(variant)
 df = pd.DataFrame(products)
+df = df.drop_duplicates()
 df.to_csv('Output.csv')
 
+l = []
+with open("Output.csv",'r+',encoding="UTF-8") as file:
+    for line in file:
+        l.append(line)
+
+i=0
+while i<len(l):
+    j=0
+    while j<len(l):
+        if l[i] == l[j] and not i==j:
+            del l[j]
+        j += 1
+    i += 1
+with open("output2.csv",'w',encoding="UTF-8") as file:
+    for x in l:
+        file.write(x)
 df.to_json('Output.js')
     
-print(products[5]['title'])                 
-print(products[5]['price'])                 
-print(products[5]['url'])                   
-print(products[5]['Weight in Grams'])       
-print(products[5]['Requires Shipping'])     
-print(products[5]['description'])           
-print(products[5]['image URL'])             
-print(products[5]['image Position'])        
-print(products[5]['option1 Name'])          
-print(products[5]['option1 Value'])
+#print(products[1]['title'])                 
+#print(products[1]['price'])                 
+#print(products[1]['url'])                   
+#print(products[1]['Weight in Grams'])       
+#print(products[1]['Requires Shipping'])     
+##print(products[1]['description'])           
+#print(products[1]['image URL'])             
+#print(products[1]['image Position'])        
+#print(products[1]['option1 Name'])          
+#print(products[1]['option1 Value'])
 
 
 
