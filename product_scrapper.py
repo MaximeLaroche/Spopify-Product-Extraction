@@ -18,7 +18,7 @@ home_page = 'https://doncarne.de/de'
 product_page = "/produkt/"
 separator = "f9ha"
 
-
+local = False
 
 
 dummy = {
@@ -50,6 +50,14 @@ def getDescription(soup,p):
     ##print(buybox)
     title = buybox.select('h1.product--title')[0]
     title.decompose()
+
+    weight = buybox.select('div.product--unit')[0]
+    p['Weight in Grams'] =''
+    for digit in weight.text.split():
+        if digit.isdigit():
+            p['Weight in Grams'] += digit  
+    print(p['Weight in Grams'])
+    weight.decompose()
     try:
         scripts = soup.select('script')
         for script in scripts:
@@ -132,8 +140,16 @@ def getDescription(soup,p):
         pass
     return p
 #Get the product list
-req = requests.get(home_page + product_page)
-soup = bs(req.text,'html.parser')
+
+try:
+    product_page = open("product-page.html",'r',encoding="UTF-8")
+    
+    soup = bs(product_page.read(),'html.parser')
+except:
+    req = requests.get(home_page + product_page)
+    soup = bs(req.text,'html.parser')
+    with open("product-page.html",'w',encoding="UTF-8") as file:
+        file.write(req.text)
 
 #main info
 cards = soup.find_all('div',class_="product--bottom-container")
@@ -161,7 +177,7 @@ for card in cards:
     p['price'] = card.find('span',class_='price--default is--nowrap').text.split('€',1)[0]
     p['title'] = card.find('a',class_='product--title')['title']
     p['url'] = card.find('a',class_='product--title')['href']
-    
+    print(p['url'])
     
 
     try:
@@ -180,7 +196,7 @@ for card in cards:
         print('Got axception with tags')
 
     products.append(p)
-#driver = webdriver.Chrome(ChromeDriverManager().install())
+
 numProduct = 0
 variantList = []
 
@@ -195,10 +211,16 @@ for p in products:
     p['Requires Shipping'] = 'True'
     p['taxable'] = 'True'
     
-    
-    page = requests.get(p['url'])
-    soup = bs(page.text,'html.parser')#""".text"""
+    try:
+        product_page = open(f"products/{p['title']}.html",'r',encoding="UTF-8")
+        soup = bs(product_page.read(),'html.parser')
+    except :
+        page = requests.get(p['url'])
+        soup = bs(page.text,'html.parser')
+        with open(f"products/{p['title']}.html",'w',encoding="UTF-8") as file:
+            file.write(req.text)
 
+        
 
     images = soup.find_all('div', class_ = 'image--box image-slider--item')
     
