@@ -237,20 +237,3 @@ except :
 df.sort_values(by='handle')
 df.to_csv('Output.csv')
 
-l = []
-with open("Output.csv",'r+',encoding="UTF-8") as file:
-    for line in file:
-        l.append(line)
-
-i=0
-while i<len(l):
-    j=0
-    while j<len(l):
-        if l[i] == l[j] and not i==j:
-            del l[j]
-        j += 1
-    i += 1
-with open("output2.csv",'w',encoding="UTF-8") as file:
-    for x in l:
-        file.write(x)
-df.to_json('Output.js')
